@@ -149,10 +149,24 @@ Installed into your Root:
 
 ## Updating, or changing team or name
 
-Re-run the install command. That is also how a code fix propagates — nothing updates itself, by design
-([ADR-0003](docs/adr/0003-single-repo-with-code-copied-at-setup.md)), so a push to this repo
+Re-run the install command. That is also how a code fix propagates — nothing updates itself, by
+design ([ADR-0003](docs/adr/0003-single-repo-with-code-copied-at-setup.md)), so a push to this repo
 cannot execute on anyone's machine until they choose to re-run. `tracker_version` on each row
 shows who is stale.
+
+**To update, you must defeat the package-runner cache.** `pnpm dlx` caches a `github:` spec for
+24 hours by default, so a plain re-run can silently reinstall the *old* code — the failure looks
+exactly like the update having worked. Use either:
+
+```bash
+# force a fresh fetch of main
+pnpm --config.dlxCacheMaxAge=0 dlx github:timepatiphonp-tw/claude-code-usage-tracker
+
+# or pin an exact commit/tag, which is a different cache key and so always fresh
+pnpx github:timepatiphonp-tw/claude-code-usage-tracker#<commit-or-tag>
+```
+
+A first-time install is unaffected — there is nothing cached yet.
 
 Re-running preserves your original install date, reuses the existing clone, and replaces rather
 than duplicates the hook entry.

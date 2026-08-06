@@ -27,9 +27,27 @@ Copying at setup breaks that link: pulling data never changes what executes.
   single-repo, but needs a second checkout or worktree just to push, which reproduces the
   two-repo split under a different name.
 
+## The update path has a cache trap
+
+Install is `pnpx github:timepatiphonp-tw/claude-code-usage-tracker`, and re-running it is the
+update mechanism. But `pnpm dlx` caches a `github:` spec for 24 hours by default (`dlxCacheMaxAge`),
+so **a plain re-run can reinstall the old code while appearing to succeed.** Verified: with
+`c4f095f` on `main`, a re-run served the previously cached `43510a7` — the fetched copy had no
+`.git` and none of the new code.
+
+That is the worst shape of failure for this project: a fix that seems to have propagated and has
+not. Updating therefore requires either a forced fetch
+(`pnpm --config.dlxCacheMaxAge=0 dlx github:…`) or a pinned commit/tag spec
+(`…#<commit-or-tag>`), which is a different cache key and always fresh. Both were confirmed to
+serve the new code. A first install is unaffected — nothing is cached yet.
+
+If the tool starts changing often, tagging releases and installing by tag is the durable answer:
+it is cache-safe by construction and makes `tracker_version` in each row correspond to something
+nameable.
+
 ## Consequences
 
-- Updates require people to re-run `node setup.js`; nothing propagates on its own.
+- Updates require people to re-run setup; nothing propagates on its own.
 - Version skew is therefore expected. `tracker_version` is stored on every row so staleness
   is visible in the data itself rather than needing to be surveyed.
 - Anyone with push access can still alter the code in the repo — this decision removes
