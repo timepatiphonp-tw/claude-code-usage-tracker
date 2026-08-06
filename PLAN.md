@@ -57,10 +57,20 @@ Sandbox-only, or not tested at all. Each is a real path in the live install:
 
 ## Settled — do not relitigate
 
-- **No debounce.** Every `SessionEnd` scrapes; the lockfile is the only concurrency control. A
-  time-based debounce silently defers the most recent session's data until the *next* session
-  ends, which may be days later or never. Measured volume being suppressed: median 1 session per
-  day, ~2 commits.
+- **No *time-based* debounce; a trailing coalesce instead.** Every `SessionEnd` marks work pending
+  and spawns a worker. The worker takes the lock, clears the marker, runs, and goes again if the
+  marker reappeared during the run — up to 5 rounds. Fires arriving while the lock is held exit
+  silently and unlogged, because the holder will pick them up.
+
+  A time-based debounce was specified, then removed, then replaced by this. The time-based one
+  *skipped* a run, deferring the newest data until the next fire — possibly days later or never,
+  so someone working Friday afternoon then taking a week off would show only their first session.
+  A trailing coalesce never defers past the end of the burst.
+
+  This matters because **in the IDE, `SessionEnd` fires on every chat switch**, not once per
+  working session. At the CLI's measured rate (median 1/day, max 6) one commit per fire was free;
+  at IDE rates it would be dozens per person per day, each rewriting the same row. Verified: 12
+  rapid fires produce **1 log line and 1 commit** (`rounds=3`); a lone fire logs `rounds=1`.
 - **`person_email` stays plaintext.** Hashing it beside a `person_name` column and a named file
   protects nothing; repo privacy is the actual control.
 - **Token columns split main vs subagent, explicitly prefixed.** Decided early because transcript

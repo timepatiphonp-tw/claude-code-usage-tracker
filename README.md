@@ -139,9 +139,25 @@ Both were found by measuring real transcripts, and both are invisible to casual 
 
 ## How it runs
 
-A `SessionEnd` hook re-spawns itself as a detached worker and returns in ~400ms, then the worker
-scrapes, rewrites the rows and pushes. It must detach: the work takes ~7s, nearly all of it the
-git round-trip, and Claude Code cancels a hook that blocks session exit.
+A `SessionEnd` hook marks work pending, re-spawns itself as a detached worker and returns in
+~400ms; the worker then scrapes, rewrites the rows and pushes. It must detach: the work takes ~7s,
+nearly all of it the git round-trip, and Claude Code cancels a hook that blocks session exit.
+
+**Bursts are coalesced.** In the IDE, `SessionEnd` fires on every chat switch — not once per
+working session. So fires arriving while a worker is running exit silently, and the running worker
+simply goes again if new ones arrived, up to 5 rounds. A burst of 12 fires produces one commit and
+one log line (`rounds=3`) rather than 12 of each.
+
+**Which surfaces are counted.** The terminal CLI and the VS Code / Cursor extension both count —
+they share `settings.json` (so the hook fires) and the same conversation history (so the
+transcripts exist). Claude Code on the web is **not** counted: those sessions run server-side and
+never touch local transcripts, unless you resume one locally. Records with an `entrypoint` of
+`sdk-*` are excluded on purpose.
+
+If you use an IDE, check which config directory it writes to. VS Code launched from the desktop
+does not inherit your shell environment, so a `CLAUDE_CONFIG_DIR` you set in your shell may not
+apply — and the extension would then write to `~/.claude` while your tracker scrapes somewhere
+else. Symptom: no rows despite heavy use.
 
 **Everything is recomputed, never appended.** Each Scrape rebuilds every date still present in
 the transcripts (~30–45 days, after which Claude Code prunes them) and replaces those rows,
