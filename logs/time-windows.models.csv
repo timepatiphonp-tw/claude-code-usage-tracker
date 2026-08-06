@@ -1,0 +1,2 @@
+date,person_email,model,turns,subagent_turns,main_input_tokens,main_output_tokens,main_cache_creation_tokens,main_cache_read_tokens,subagent_input_tokens,subagent_output_tokens,subagent_cache_creation_tokens,subagent_cache_read_tokens
+2026-08-06,time.puntusin@jetstar.com,claude-opus-5,1,0,2,13,9677,30568,0,0,0,0
