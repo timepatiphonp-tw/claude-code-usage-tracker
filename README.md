@@ -15,6 +15,46 @@ Terms used here (Root, Person, Prompt, Turn, Session, Active Day, Scrape) are de
 [CONTEXT.md](CONTEXT.md). Every CSV column is documented in [docs/schema.md](docs/schema.md).
 Decisions and their trade-offs are in [docs/adr/](docs/adr/).
 
+## Current limitations — read first
+
+Developed and tested on macOS with the terminal CLI. Two areas are less proven.
+
+### Windows
+
+**It works, but on thin evidence.** One Windows install has scraped, committed and pushed
+successfully — that is the entire sample.
+
+- **Reinstall if you set it up before 2026-08-06.** Three Windows fixes landed after the first
+  install: the worker no longer opens a visible console at every session exit, CRLF line endings
+  no longer corrupt the CSVs, and session-end bursts are coalesced. Picking them up needs the
+  cache-busting command in [Updating](#updating-or-changing-team-or-name) — a plain re-run
+  reinstalls the cached old copy.
+- **HTTPS git auth may not work.** Setup clones over SSH, so a machine with only HTTPS
+  credentials or `gh auth` fails at install. And `GIT_TERMINAL_PROMPT=0` does not suppress Git
+  Credential Manager's GUI dialog, which a detached worker with no console cannot answer — the
+  push then hangs or fails, silently. SSH with a loaded key is the supported path.
+- **If you use more than one machine, give each a distinct name at setup** (e.g. `alice` and
+  `alice-win`). Rows are keyed on `(date, person_email)` and each machine recomputes that key from
+  only its own transcripts, so two machines sharing a name overwrite each other's rows — the last
+  push wins, with no error. Distinct names produce separate files that still roll up to one person,
+  because rollups group on `person_email`.
+
+### Claude Code UI (IDE extension, desktop app, web)
+
+- **The VS Code / Cursor extension should be counted**, since it shares `settings.json` (so the
+  hook fires) and the same conversation history (so the transcripts exist). **Not yet verified** —
+  no `claude-vscode` records have appeared in any transcript we have looked at.
+- **`SessionEnd` fires on every chat switch in the UI**, not once per working session. Without the
+  burst coalescing added on 2026-08-06 that means a commit per switch — dozens a day.
+- **Claude Code on the web is not counted at all.** Those sessions run server-side and never write
+  local transcripts, unless you resume one locally.
+- **The desktop app is unverified.** Same engine, so probably the same transcripts, but untested.
+- **An IDE may write to a different config directory than you expect.** VS Code launched from the
+  desktop does not inherit your shell environment, so a `CLAUDE_CONFIG_DIR` set in your shell may
+  not apply and the extension writes to `~/.claude` instead. If that is not the Root you told setup
+  to track, your IDE usage is invisible — and on a machine with both a work and a personal account,
+  it may be recorded under the personal one. Symptom: no rows despite heavy use.
+
 ## Before you install
 
 - **This repo must be private.** Rows carry every person's work email address and their daily
