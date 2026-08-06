@@ -18,12 +18,22 @@ Decisions and their trade-offs are in [docs/adr/](docs/adr/).
 ## Install
 
 ```bash
-git clone git@github.com:timepatiphonp-tw/claude-code-usage-tracker.git
-cd claude-code-usage-tracker
-node setup.js
+pnpx github:timepatiphonp-tw/claude-code-usage-tracker
 ```
 
+(`npx github:timepatiphonp-tw/claude-code-usage-tracker` works identically. Nothing is
+published to a registry — the package is fetched straight from this repo, over the git access you
+already need in order to push usage rows.)
+
 It asks three things: which Claude Code config directory to track, your team, and your name.
+Everything it needs is copied into your config directory, so there is nothing left behind.
+
+Working from a clone instead:
+
+```bash
+git clone git@github.com:timepatiphonp-tw/claude-code-usage-tracker.git
+cd claude-code-usage-tracker && node setup.js
+```
 
 **The Root prompt has no default, deliberately.** A machine can hold more than one Claude Code
 account — a work one and a personal one — and each option is shown with its email and
@@ -33,13 +43,14 @@ out-of-hours usage into a team repo, irreversibly.
 Non-interactive:
 
 ```bash
-node setup.js --root=~/.claude-jetstar --team=star --name="Alice Nguyen"
+pnpx github:timepatiphonp-tw/claude-code-usage-tracker \
+  --root=~/.claude-jetstar --team=star --name="Alice Nguyen"
 ```
 
-**Then delete the clone.** Setup makes its own copy of everything it needs; the directory you
-cloned into is disposable.
-
 Tracking starts from the day you install. Nothing from before is published.
+
+**Team names come from `teams.json` in this repo**, read from the clone setup makes — so adding
+a team is an ordinary commit, not a new release.
 
 ## Checking it works
 
@@ -138,7 +149,7 @@ Installed into your Root:
 
 ## Updating, or changing team or name
 
-Re-run `setup.js`. That is also how a code fix propagates — nothing updates itself, by design
+Re-run the install command. That is also how a code fix propagates — nothing updates itself, by design
 ([ADR-0003](docs/adr/0003-single-repo-with-code-copied-at-setup.md)), so a push to this repo
 cannot execute on anyone's machine until they choose to re-run. `tracker_version` on each row
 shows who is stale.

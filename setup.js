@@ -80,6 +80,10 @@ function readTeams(repoDir) {
   fail(`Could not read teams.json (looked in ${candidates.join(', ')}).`);
 }
 
+// Run via `pnpx github:...` there is no clone to tidy up, so the closing advice
+// must not tell people to delete one.
+const ranFromGitClone = () => fs.existsSync(path.join(HERE, '.git'));
+
 // Where to clone the data repo from. When run via `pnpx github:owner/repo` there
 // is no local clone to read an origin from, so package.json is the source of
 // truth; npm's `git+` prefix is not something git itself understands.
@@ -234,7 +238,7 @@ Installed.
   config          ${p.config}
   SessionEnd hook ${hook.action}${hook.otherHooks ? `, ${hook.otherHooks} unrelated SessionEnd hook(s) left alone` : ''}
 
-The clone you ran this from is no longer needed — you can delete it.
+${ranFromGitClone() ? 'The clone you ran this from is no longer needed — you can delete it.' : 'Nothing left behind: this ran from a temporary package cache.'}
 
 Nothing is verified yet: your git identity, credentials and push permission are
 first exercised when a session ends. Run a Claude Code session, then check:
