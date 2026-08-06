@@ -223,7 +223,10 @@ async function main() {
       };
       fs.writeFileSync(p.config, JSON.stringify(config, null, 2) + '\n');
 
-      const hook = registerHook(p.settings, `node ${JSON.stringify(p.hookEntry)}`);
+      // Forward slashes even on Windows: node accepts them, and the command may be
+      // run through cmd or through a bash-like shell, where backslashes are escapes.
+      const hookPath = p.hookEntry.split(path.sep).join('/');
+      const hook = registerHook(p.settings, `node ${JSON.stringify(hookPath)}`);
 
       // --- Report ----------------------------------------------------------
       console.log(`

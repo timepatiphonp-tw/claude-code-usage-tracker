@@ -1,0 +1,13 @@
+# Keep the usage CSVs LF on every platform.
+#
+# Without this, Windows git defaults to core.autocrlf=true and rewrites these
+# files to CRLF on checkout. The scraper writes LF, so the file would flip line
+# endings on every run — an endless diff — and reading it back would leave a
+# trailing \r on the last column.
+*.csv text eol=lf
+
+# Same reasoning for the code: the hook path is written into settings.json and
+# the scripts are copied verbatim into each person's config directory.
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf

@@ -142,6 +142,7 @@ function spawnWorker() {
   const child = spawn(process.execPath, [__filename, '--worker'], {
     detached: true, // New process group, so it survives the session's exit.
     stdio: 'ignore', // No pipes, or the parent would wait on them.
+    windowsHide: true, // Otherwise Windows opens a visible console on every session exit.
   });
   child.unref(); // Let this process exit without waiting for the child.
 }
