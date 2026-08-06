@@ -15,6 +15,19 @@ Terms used here (Root, Person, Prompt, Turn, Session, Active Day, Scrape) are de
 [CONTEXT.md](CONTEXT.md). Every CSV column is documented in [docs/schema.md](docs/schema.md).
 Decisions and their trade-offs are in [docs/adr/](docs/adr/).
 
+## Before you install
+
+- **This repo must be private.** Rows carry every person's work email address and their daily
+  activity. Git permissions are repo-level, so repo visibility *is* the access control — there is
+  nothing else protecting the data
+  ([ADR-0004](docs/adr/0004-collect-the-minimum-that-answers-the-question.md)).
+- **Node 18+.** Required by the installer and the hook. Claude Code can be installed as a native
+  binary with no Node present, so check first: `node -v`.
+- **Push access to this repo**, and a push that works without prompting — an SSH key, or a
+  working credential helper. The hook runs detached with no terminal, so an HTTPS remote with no
+  helper will fail silently.
+- **Everyone tracked should know they are tracked.** See [Rolling out](#rolling-out) below.
+
 ## Install
 
 ```bash
@@ -171,6 +184,27 @@ A first-time install is unaffected — there is nothing cached yet.
 Re-running preserves your original install date, reuses the existing clone, and replaces rather
 than duplicates the hook entry.
 
+## Rolling out
+
+In order, because two of these cannot be undone afterwards:
+
+1. **Confirm the repo is private.** `curl -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/<owner>/<repo>` should not return `200` unauthenticated. Anything already
+   pushed while it was public has been served publicly and cannot be retracted.
+2. **Fill in `teams.json`** with the real team names. Setup rejects a team that is not listed, so
+   anyone on a missing team cannot install.
+3. **Grant push access** to everyone who will be tracked.
+4. **Tell people before they install**, not after. Their name, email, active days, prompt counts
+   and token volumes land in a repo the whole team can read, and the `team` column makes
+   per-person and per-team comparison trivial. That is a property of the design, not an oversight —
+   which is exactly why it should be said out loud first.
+5. **Tell each person which Root to pick.** The prompt shows the email and organisation for each
+   one, but someone with a personal Claude account can still choose it by mistake and publish
+   their own out-of-hours usage into a team repo, irreversibly. One sentence naming the right
+   account prevents it.
+6. **Ask them to check the log after their first session** (see [Checking it works](#checking-it-works)).
+   A failed install, a broken hook and genuine inactivity all look identical from the repo — no
+   rows. Only the local log distinguishes them.
+
 ## Inspecting without installing
 
 ```bash
@@ -192,8 +226,10 @@ node scrape.js --root=~/.claude-jetstar --team=star --name="Alice N."   # prints
   `cc_version` on each row lets a break be dated.
 - **Team and name are self-asserted.** `person_email` is authenticated, so nobody can impersonate
   a colleague, but they can put themselves in the wrong team. Treat team as reporting labelling.
-- **Usage data is shared.** Anyone with repo access sees every person's rows, and the `team`
-  column makes comparison trivial. That is a property of the design — say so before rolling out.
+- **Usage data is shared, and repo visibility is the only control.** Anyone with repo access sees
+  every person's rows including their work email, and the `team` column makes comparison trivial.
+  Git permissions are repo-level, so per-team isolation is not possible within one repo — it would
+  need a repo per team. Say so before rolling out.
 - **Everyone with push access can change the code**, since the branch the hook pushes to cannot
   be protected. ADR-0003 removes automatic execution of a bad push, not the push itself.
 - **Requires git push access** for every person; the hook pushes under their own credentials.
