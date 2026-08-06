@@ -1,5 +1,18 @@
 # claude-code-usage-tracker
 
+> **This is a proof of concept, not a finished product.** It was built to answer two questions:
+>
+> 1. **Can usable usage data be derived from the transcripts Claude Code already writes** to
+>    `~/.claude/projects/**/*.jsonl` — without instrumenting anything at runtime?
+> 2. **What can a `SessionEnd` hook actually do** — can it collect and push that data on its own,
+>    without breaking or delaying someone's session?
+>
+> Both turned out to be yes, with real caveats that took measuring to find (see
+> [the counting rules](#two-counting-rules-that-are-easy-to-get-wrong) and
+> [ADR-0005](docs/adr/0005-dedupe-records-and-count-prompts.md)). The effort went into the numbers
+> being **correct**, not into polish — so the user experience is rough in places, on Windows
+> especially. Read [Current limitations](#current-limitations--read-first) before installing.
+
 Tracks how often the team uses Claude Code, and how much output it produces, without anyone
 pulling numbers by hand.
 
@@ -17,7 +30,9 @@ Decisions and their trade-offs are in [docs/adr/](docs/adr/).
 
 ## Current limitations — read first
 
-Developed and tested on macOS with the terminal CLI. Two areas are less proven.
+Developed and tested on macOS with the terminal CLI, which is where both proof-of-concept
+questions above were answered. Everything else got less attention, and two areas in particular are
+less proven — not because they are hard, but because polish was not the point yet.
 
 ### Windows
 
