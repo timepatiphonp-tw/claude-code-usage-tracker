@@ -1,0 +1,26 @@
+{
+  "name": "claude-code-usage-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Team-wide Claude Code usage tracking, read from local session transcripts",
+  "bin": {
+    "claude-code-usage-tracker": "setup.js",
+    "cc-usage-setup": "setup.js",
+    "cc-usage-scrape": "scrape.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/timepatiphonp-tw/claude-code-usage-tracker.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "setup.js",
+    "scrape.js",
+    "run-hook.js",
+    "lib/",
+    "teams.json",
+    "README.md"
+  ]
+}

@@ -60,18 +60,39 @@ async function choose(rl, label, options, { current } = {}) {
   }
 }
 
-function readTeams() {
-  const file = path.join(HERE, 'teams.json');
-  let teams;
+// Read from the data-repo clone first, so adding a team is an ordinary commit
+// rather than a new release. The package copy is only a fallback for the case
+// where the clone has not happened yet.
+function readTeams(repoDir) {
+  const candidates = [repoDir && path.join(repoDir, 'teams.json'), path.join(HERE, 'teams.json')].filter(Boolean);
+  for (const file of candidates) {
+    let teams;
+    try {
+      teams = JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch {
+      continue;
+    }
+    if (!Array.isArray(teams) || !teams.length || teams.some((t) => typeof t !== 'string')) {
+      fail(`${file} must be a non-empty array of team-name strings.`);
+    }
+    return { teams, file };
+  }
+  fail(`Could not read teams.json (looked in ${candidates.join(', ')}).`);
+}
+
+// Where to clone the data repo from. When run via `pnpx github:owner/repo` there
+// is no local clone to read an origin from, so package.json is the source of
+// truth; npm's `git+` prefix is not something git itself understands.
+function resolveRepoUrl(explicit) {
+  if (explicit) return explicit;
   try {
-    teams = JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch (err) {
-    fail(`Could not read ${file}: ${err.message}`);
+    const pkg = JSON.parse(fs.readFileSync(path.join(HERE, 'package.json'), 'utf8'));
+    const url = pkg.repository && (typeof pkg.repository === 'string' ? pkg.repository : pkg.repository.url);
+    if (url) return url.replace(/^git\+/, '');
+  } catch {
+    /* fall through */
   }
-  if (!Array.isArray(teams) || !teams.length || teams.some((t) => typeof t !== 'string')) {
-    fail(`${file} must be a non-empty array of team-name strings.`);
-  }
-  return teams;
+  return remoteUrl(HERE); // Running from a git clone.
 }
 
 const fail = (msg) => {
@@ -113,13 +134,12 @@ function ensureRepo(repoDir, url) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
-  const url = args['repo-url'] || remoteUrl(HERE);
-  if (!url) fail('Could not determine the repo URL from this clone. Pass --repo-url=<url>.');
+  const url = resolveRepoUrl(args['repo-url']);
+  if (!url) fail('Could not determine the repo URL. Pass --repo-url=<url>.');
 
   const roots = discoverRoots();
   if (!roots.length) fail('No Claude Code config directories found (looked for ~/.claude* with a projects/ tree).');
 
-  const teams = readTeams();
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
   try {
@@ -157,7 +177,14 @@ async function main() {
     try {
       const previous = fs.existsSync(p.config) ? JSON.parse(fs.readFileSync(p.config, 'utf8')) : null;
 
-      // --- 2. Team + 3. Name ----------------------------------------------
+      // --- 2. Install the code and the data clone --------------------------
+      // Done before the team prompt because teams.json is read from the clone,
+      // so the roster is a commit away rather than a release away.
+      copyCode(p.installDir);
+      const repo = ensureRepo(p.repo, url);
+      const { teams } = readTeams(p.repo);
+
+      // --- 3. Team + 4. Name ----------------------------------------------
       const team =
         args.team ||
         (await choose(
@@ -173,10 +200,6 @@ async function main() {
         const suggested = (previous && previous.person_name) || '';
         personName = await ask(rl, `\nYour name${suggested ? ` [${suggested}]` : ''}: `) || suggested;
       }
-
-      // --- 4. Install ------------------------------------------------------
-      copyCode(p.installDir);
-      const repo = ensureRepo(p.repo, url);
 
       // install_date is written once. Resetting it on a re-run would make every
       // earlier date unscrapeable, so a day the hook failed could never be repaired.
