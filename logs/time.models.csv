@@ -1,3 +1,3 @@
 date,person_email,model,turns,subagent_turns,main_input_tokens,main_output_tokens,main_cache_creation_tokens,main_cache_read_tokens,subagent_input_tokens,subagent_output_tokens,subagent_cache_creation_tokens,subagent_cache_read_tokens
-2026-08-06,time.puntusin@jetstar.com,claude-opus-5,180,0,2491,172029,480442,28037640,0,0,0,0
+2026-08-06,time.puntusin@jetstar.com,claude-opus-5,188,0,2506,176984,494236,29916439,0,0,0,0
 2026-08-06,time.puntusin@jetstar.com,claude-sonnet-5,14,0,28,8107,30241,672443,0,0,0,0
