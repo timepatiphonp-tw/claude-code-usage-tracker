@@ -6,3 +6,4 @@ date,person_email,model,turns,subagent_turns,main_input_tokens,main_output_token
 2026-08-11,time.puntusin@jetstar.com,claude-opus-5,36,0,69,24891,63048,2103682,0,0,0,0
 2026-08-13,time.puntusin@jetstar.com,claude-opus-5,69,0,1794,54268,165347,5598933,0,0,0,0
 2026-08-21,time.puntusin@jetstar.com,claude-opus-5,85,0,170,54288,150470,3273567,0,0,0,0
+2026-08-24,time.puntusin@jetstar.com,claude-opus-5,6,0,12,9267,24961,201716,0,0,0,0
